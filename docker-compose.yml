@@ -1,0 +1,95 @@
+version: '3.3'
+services:
+# shards
+  shard1:
+    container_name: shard1
+    image: mongo
+    command: mongod --shardsvr --replSet fids-rs --dbpath /data/db --port 27018
+    ports:
+      - 27018:27018
+    expose:
+      - "27018"
+    environment:
+      TERM: xterm
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /mongo_cluster/data11:/data/db
+  shard2:
+    container_name: shard2
+    image: mongo
+    command: mongod --shardsvr --replSet fids-rs --dbpath /data/db --port 27018
+    ports:
+      - 27028:27018
+    expose:
+      - "27018"
+    environment:
+      TERM: xterm
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /mongo_cluster/data12:/data/db
+  shard3:
+    container_name: shard3
+    image: mongo
+    command: mongod --shardsvr --replSet fids-rs --dbpath /data/db --port 27018
+    ports:
+      - 27038:27018
+    expose:
+      - "27018"
+    environment:
+      TERM: xterm
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /mongo_cluster/data13:/data/db
+
+# configs servers
+  cfg1:
+    container_name: cfg1
+    image: mongo
+    command: mongod --configsvr --replSet fids-rs-cfg --dbpath /data/db --port 27017
+    environment:
+      TERM: xterm
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /mongo_cluster/config1:/data/db
+  cfg2:
+    container_name: cfg2
+    image: mongo
+    command: mongod --configsvr --replSet fids-rs-cfg --dbpath /data/db --port 27017
+    environment:
+      TERM: xterm
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /mongo_cluster/config2:/data/db
+  cfg3:
+    container_name: cfg3
+    image: mongo
+    command: mongod --configsvr --replSet fids-rs-cfg --dbpath /data/db --port 27017
+    environment:
+      TERM: xterm
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /mongo_cluster/config3:/data/db
+# router
+  mongos1:
+    container_name: mongos1
+    image: mongo
+    depends_on:
+      - cfg1
+      - cfg2
+      - cfg3
+      - shard1
+      - shard2
+      - shard3
+    command: mongos --configdb fids-rs-cfg/cfg1:27017,cfg2:27017,cfg3:27017 --port 27017 --bind_ip_all
+    ports:
+      - 27017:27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
