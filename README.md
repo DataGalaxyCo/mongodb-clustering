@@ -13,11 +13,12 @@ docker pull mongo
 
 You can change some of general options such as number of shard member and authentication(username & password) in the`config.py` file:
 ```
+# number of shards
 num_of_shard = 3
-```
-You should make this image:
-```
-docker build -t mongokey .
+
+# Mongodb credential
+mongo_user = 'admin'
+mongo_pass = 'pass'
 ```
 
 #### Installation and running
