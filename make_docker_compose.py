@@ -82,6 +82,7 @@ def install():
     print "Making `keyfile` has been finished."
     print "Making custom image from mongodb image."
     cmd = "docker build -t mongokey ."
+    print "Making custom image \t\t\t done"
     os.popen(cmd).read()
     shards = ""
     mongos = ""
