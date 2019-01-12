@@ -1,2 +1,5 @@
 docker-compose.yml
 *.py[ocd]
+darvazeh
+auth.js
+mongo_cluster/
