@@ -76,10 +76,13 @@ db.auth('%s', '%s')
 def install():
     print "Make keyfile ... "
     cmd = "openssl rand -base64 512 > darvazeh"
-    os.popen(cmd).read()[:-1].replace('\n', ' ')
+    os.popen(cmd).read()
     cmd = "chmod 400 darvazeh"
-    os.popen(cmd).read()[:-1].replace('\n', ' ')
+    os.popen(cmd).read()
     print "Making `keyfile` has been finished."
+    print "Making custom image from mongodb image."
+    cmd = "docker build -t mongokey ."
+    os.popen(cmd).read()
     shards = ""
     mongos = ""
     init = 27018
@@ -162,6 +165,8 @@ def install():
     os.popen(cmd).read()
     cmd = "mongo --port 27017 < auth.js"
     os.popen(cmd).read()
+    os.popen('sudo rm -rf darvazeh').read()
+    os.popen('sudo rm -rf auth.js').read()
     print "Final step has been finished."
 
 
@@ -171,26 +176,26 @@ def remove():
     print "Remove... \t\t\t done"
 
 
-# try:
-op = sys.argv[1]
 try:
-    extra = sys.argv[2]
-except Exception:
-    extra = 'all'
-if op == 'install':
-    install()
-elif op == 'remove':
-    remove()
-elif op == 'logs':
-    cmd = "docker-compose logs --tail={} -t -f".format(extra)
-    os.system(cmd)
-elif op == 'run':
-    cmd = "docker-compose up -d"
-    os.popen(cmd).read()[:-1].replace('\n', ' ')
-elif op == 'stop':
-    cmd = "docker-compose stop"
-    os.popen(cmd).read()[:-1].replace('\n', ' ')
-else:
-    print "Please pass `install` or `remove` arg"
-# except Exception as e:
-#     print "You should pass just one argument", e
+    op = sys.argv[1]
+    try:
+        extra = sys.argv[2]
+    except Exception:
+        extra = 'all'
+    if op == 'install':
+        install()
+    elif op == 'remove':
+        remove()
+    elif op == 'logs':
+        cmd = "docker-compose logs --tail={} -t -f".format(extra)
+        os.system(cmd)
+    elif op == 'run':
+        cmd = "docker-compose up -d"
+        os.popen(cmd).read()[:-1].replace('\n', ' ')
+    elif op == 'stop':
+        cmd = "docker-compose stop"
+        os.popen(cmd).read()[:-1].replace('\n', ' ')
+    else:
+        print "Please pass `install` or `remove` arg"
+except Exception as e:
+    print "You should pass just one argument", e
