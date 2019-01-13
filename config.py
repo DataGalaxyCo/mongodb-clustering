@@ -85,3 +85,8 @@ Please pass these options:
 4- stop \t\t\t For stopping shard service
 5- logs \t\t\t For showing logs of all shards and cfg and members
 """
+
+
+shard_keys_map = {}
+sample_db_enable = 'sh.enableSharding("%s")'
+sample_shard_key = 'sh.shardCollection("%s.%s", { %s : 1 } )'

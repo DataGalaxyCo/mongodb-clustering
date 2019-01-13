@@ -21,7 +21,15 @@ mongo_user = 'admin'
 mongo_pass = 'pass'
 ```
 
-#### Installation and running
+#### Enable sharding on database and setting shard keys:
+Please fill shard_keys variable in the `config.py` file such as below:
+```
+shard_keys_map = {
+    'database': [('coll1', 'key'), ('coll2', 'key')]
+}
+```
+
+#### Installation and Running
 ```
 python make_docker_compose.py install
 ```

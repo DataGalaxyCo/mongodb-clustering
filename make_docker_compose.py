@@ -7,6 +7,9 @@ from config import mongo_user
 from config import mongo_pass
 from config import compose_yml
 from config import num_of_shard
+from config import shard_keys_map
+from config import sample_shard_key
+from config import sample_db_enable
 
 
 def install():
@@ -15,10 +18,10 @@ def install():
     os.popen(cmd)
     cmd = "chmod 400 darvazeh"
     os.popen(cmd)
-    print "Making `keyfile` has been finished."
+    print "Making `keyfile` has been finished... done"
 
     cmd = "docker build -t mongokey ."
-    print "Making custom mongodb image has been finished \t\t\t done"
+    print "Making custom mongodb image has been finished... done"
     os.popen(cmd)
 
     shards = ""
@@ -49,13 +52,13 @@ def install():
     f = open('docker-compose.yml', 'w')
     f.write(compose_yml.format(shards, mongos))
     f.close()
-    print "Make docker Compose file... \t\t\t\t done"
+    print "Make docker Compose file... done"
 
     cmd = "docker-compose up -d"
     os.popen(cmd)
     print "Please wait 20 sec..."
     time.sleep(20)
-    print "Docker-compose up... \t\t\t\t\t\t done"
+    print "Docker-compose up... done"
 
     # Make configsrv replica set
     cmd = r"""
@@ -64,7 +67,7 @@ def install():
     os.popen(cmd)
     print "Please wait 20 sec..."
     time.sleep(20)
-    print "Making cfg replica set has been finished \t\t\t\t done"
+    print "Making cfg replica set has been finished... done"
 
     sample = r""
     priority = 100
@@ -90,8 +93,16 @@ def install():
         docker exec -it router bash -c "echo 'sh.addShard(\"shard-replica/shard{}:27018\")' | mongo "
         """.format(i)
         os.popen(cmd)
-    print "Shard initializing has been finished \t\t\t\t done"
+    print "Shard initializing has been finished... done"
 
+    extra()
+    authentication()
+
+    print "Final step has been finished."
+
+
+
+def authentication():
     auth_text = set_auth % (mongo_user, mongo_pass, mongo_user, mongo_pass)
     f = open('auth.js', 'w')
     f.write(auth_text)
@@ -106,13 +117,30 @@ def install():
     os.popen(cmd)
     os.popen('sudo rm -rf darvazeh')
     os.popen('sudo rm -rf auth.js')
-    print "Final step has been finished."
 
 
 def remove():
     cmd = "docker stop $(docker container ls -aq); docker rm $(docker container ls -aq); sudo rm -rf mongo_cluster/"
     os.popen(cmd)
-    print "Remove... \t\t\t done"
+    print "Remove... done"
+
+
+def extra():
+    cmd_shard_keys = "use admin\n"
+    for db, _map in shard_keys_map:
+        cmd_shard_keys += sample_db_enable % (db) + '\n'
+        for coll, _key in _map:
+            cmd_shard_keys += sample_shard_key % (db, coll, _key) + '\n'
+
+    f = open('extra.js', 'w')
+    f.write(cmd_shard_keys)
+    f.close()
+    cmd = "sudo cp extra.js mongo_cluster/router/"
+    os.popen(cmd)
+    cmd = "docker exec -it router bash -c 'mongo < /data/db/extra.js; rm /data/db/extra.js'"
+    os.popen(cmd)
+    os.popen('sudo rm -rf extra.js')
+    print "Finish adding shard_keys processes... done"
 
 
 try:
