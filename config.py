@@ -95,3 +95,9 @@ Please pass these options:
 shard_keys_map = {
     'DATABASE': [('COLLECTION_1', '_id'), ('COLLECTION_2', '_id')]
 }
+
+
+try:
+    from config_local import *
+except ImportError:
+    pass
