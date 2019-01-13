@@ -24,6 +24,9 @@ mongo_pass = 'pass'
 #### Installation and running
 ```
 python make_docker_compose.py install
-python make_docker_compose.py run
 ```
 
+#### Help
+```
+python make_docker_compose.py help
+```
