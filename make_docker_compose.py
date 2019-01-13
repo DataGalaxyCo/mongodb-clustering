@@ -31,6 +31,7 @@ def install():
     shard{}:
         container_name: shard{}
         image: mongokey
+        restart: always
         command: mongod --keyFile darvazeh --shardsvr --replSet shard-replica --dbpath /data/db --port 27018
         ports:
             - {}:27018

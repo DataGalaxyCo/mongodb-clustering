@@ -14,6 +14,7 @@ services:
     cfg1:
         container_name: cfg1
         image: mongokey
+        restart: always
         command: mongod --keyFile darvazeh --configsvr --replSet config-replica --dbpath /data/db --port 27017
         environment:
             TERM: xterm
@@ -25,6 +26,7 @@ services:
     cfg2:
         container_name: cfg2
         image: mongokey
+        restart: always
         command: mongod --keyFile darvazeh --configsvr --replSet config-replica --dbpath /data/db --port 27017
         environment:
             TERM: xterm
@@ -36,6 +38,7 @@ services:
     cfg3:
         container_name: cfg3
         image: mongokey
+        restart: always
         command: mongod --keyFile darvazeh --configsvr --replSet config-replica --dbpath /data/db --port 27017
         environment:
             TERM: xterm
@@ -47,6 +50,7 @@ services:
     router:
         container_name: router
         image: mongokey
+        restart: always
         depends_on:
             - cfg1
             - cfg2
