@@ -2,8 +2,9 @@
 num_of_shard = 3
 
 # Mongodb credential
+# Note: Please change user and password from default values
 mongo_user = 'admin'
-mongo_pass = 'pass'
+mongo_pass = '1234'
 
 
 compose_yml = """
@@ -87,6 +88,6 @@ Please pass these options:
 """
 
 
-shard_keys_map = {}
-sample_db_enable = 'sh.enableSharding("%s")'
-sample_shard_key = 'sh.shardCollection("%s.%s", { %s : 1 } )'
+shard_keys_map = {
+    'DATABASE': [('COLLECTION_1', '_id'), ('COLLECTION_2', '_id')]
+}

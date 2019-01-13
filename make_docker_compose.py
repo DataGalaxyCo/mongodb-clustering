@@ -8,8 +8,6 @@ from config import mongo_pass
 from config import compose_yml
 from config import num_of_shard
 from config import shard_keys_map
-from config import sample_shard_key
-from config import sample_db_enable
 
 
 def install():
@@ -95,11 +93,12 @@ def install():
         os.popen(cmd)
     print "Shard initializing has been finished... done"
 
-    extra()
     authentication()
+    print "Please wait 10 sec for authentication..."
+    time.sleep(10)
+    shard_key_func()
 
     print "Final step has been finished."
-
 
 
 def authentication():
@@ -113,10 +112,10 @@ def authentication():
     os.popen(cmd)
     cmd = "docker exec -it shard1 bash -c 'mongo --port 27018 < /data/db/auth.js;rm /data/db/auth.js'"
     os.popen(cmd)
-    cmd = "docker exec -it router bash -c 'mongo router < /data/db/auth.js; rm /data/db/auth.js'"
+    cmd = "docker exec -it router bash -c 'mongo < /data/db/auth.js; rm /data/db/auth.js'"
     os.popen(cmd)
-    os.popen('sudo rm -rf darvazeh')
-    os.popen('sudo rm -rf auth.js')
+    os.popen('rm -rf darvazeh')
+    os.popen('rm -rf auth.js')
 
 
 def remove():
@@ -125,52 +124,53 @@ def remove():
     print "Remove... done"
 
 
-def extra():
+def shard_key_func():
     cmd_shard_keys = "use admin\n"
-    for db, _map in shard_keys_map:
-        cmd_shard_keys += sample_db_enable % (db) + '\n'
+    for db, _map in shard_keys_map.items():
+        cmd_shard_keys += 'sh.enableSharding("%s")\n' % db
         for coll, _key in _map:
-            cmd_shard_keys += sample_shard_key % (db, coll, _key) + '\n'
+            cmd_shard_keys += 'sh.shardCollection("%s.%s", { %s : 1 } )\n' % (db, coll, _key)
 
     f = open('extra.js', 'w')
     f.write(cmd_shard_keys)
     f.close()
     cmd = "sudo cp extra.js mongo_cluster/router/"
     os.popen(cmd)
-    cmd = "docker exec -it router bash -c 'mongo < /data/db/extra.js; rm /data/db/extra.js'"
+    cmd = "docker exec -it router bash -c 'mongo --authenticationDatabase admin -u {} -p {} < /data/db/extra.js; rm /data/db/extra.js'".format(mongo_user, mongo_pass)
     os.popen(cmd)
-    os.popen('sudo rm -rf extra.js')
+    os.popen('rm -rf extra.js')
     print "Finish adding shard_keys processes... done"
 
 
-try:
-    op = sys.argv[1]
+if __name__ == '__main__':
     try:
-        extra = sys.argv[2]
-    except Exception:
-        extra = 'all'
-    if op == 'install':
-        print 'Start installing...'
-        install()
-    elif op == 'remove':
-        print 'Start removing...'
-        remove()
-    elif op == 'logs':
-        cmd = "docker-compose logs --tail={} -t -f".format(extra)
-        os.system(cmd)
-    elif op == 'run':
-        print 'Start running...'
-        cmd = "docker-compose up -d"
-        os.popen(cmd)
-    elif op == 'stop':
-        cmd = "docker-compose stop"
-        os.popen(cmd)
-    elif (op == 'help') or (op == '--help'):
-        print help_msg
-    else:
-        print help_msg
-except Exception as e:
-    if sys.argv == ['make_docker_compose.py']:
-        print help_msg
-    else:
-        print "Error: ", e
+        op = sys.argv[1]
+        try:
+            extra_op = sys.argv[2]
+        except Exception:
+            extra = 'all'
+        if op == 'install':
+            print 'Start installing...'
+            install()
+        elif op == 'remove':
+            print 'Start removing...'
+            remove()
+        elif op == 'logs':
+            cmd = "docker-compose logs --tail={} -t -f".format(extra_op)
+            os.system(cmd)
+        elif op == 'run':
+            print 'Start running...'
+            cmd = "docker-compose up -d"
+            os.popen(cmd)
+        elif op == 'stop':
+            cmd = "docker-compose stop"
+            os.popen(cmd)
+        elif (op == 'help') or (op == '--help'):
+            print help_msg
+        else:
+            print help_msg
+    except Exception as e:
+        if sys.argv == ['make_docker_compose.py']:
+            print help_msg
+        else:
+            print "Error: ", e
