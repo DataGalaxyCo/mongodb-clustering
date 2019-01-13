@@ -10,10 +10,10 @@ compose_yml = """
 version: '3.3'
 services:
 {}
-    mongocfg1:
-        container_name: mongocfg1
+    cfg1:
+        container_name: cfg1
         image: mongokey
-        command: mongod --keyFile darvazeh --configsvr --replSet mongorsconf --dbpath /data/db --port 27017
+        command: mongod --keyFile darvazeh --configsvr --replSet config-replica --dbpath /data/db --port 27017
         environment:
             TERM: xterm
         expose:
@@ -21,10 +21,10 @@ services:
         volumes:
             - /etc/localtime:/etc/localtime:ro
             - ./mongo_cluster/config1:/data/db
-    mongocfg2:
-        container_name: mongocfg2
+    cfg2:
+        container_name: cfg2
         image: mongokey
-        command: mongod --keyFile darvazeh --configsvr --replSet mongorsconf --dbpath /data/db --port 27017
+        command: mongod --keyFile darvazeh --configsvr --replSet config-replica --dbpath /data/db --port 27017
         environment:
             TERM: xterm
         expose:
@@ -32,10 +32,10 @@ services:
         volumes:
             - /etc/localtime:/etc/localtime:ro
             - ./mongo_cluster/config2:/data/db
-    mongocfg3:
-        container_name: mongocfg3
+    cfg3:
+        container_name: cfg3
         image: mongokey
-        command: mongod --keyFile darvazeh --configsvr --replSet mongorsconf --dbpath /data/db --port 27017
+        command: mongod --keyFile darvazeh --configsvr --replSet config-replica --dbpath /data/db --port 27017
         environment:
             TERM: xterm
         expose:
@@ -43,15 +43,15 @@ services:
         volumes:
             - /etc/localtime:/etc/localtime:ro
             - ./mongo_cluster/config3:/data/db
-    mongos1:
-        container_name: mongos1
+    router:
+        container_name: router
         image: mongokey
         depends_on:
-            - mongocfg1
-            - mongocfg2
-            - mongocfg3
+            - cfg1
+            - cfg2
+            - cfg3
 {}
-        command: mongos --keyFile darvazeh --configdb mongorsconf/mongocfg1:27017,mongocfg2:27017,mongocfg3:27017 --port 27017 --bind_ip_all
+        command: mongos --keyFile darvazeh --configdb config-replica/cfg1:27017,cfg2:27017,cfg3:27017 --port 27017 --bind_ip_all
         ports:
             - 27017:27017
         expose:
@@ -124,7 +124,7 @@ def install():
     print "Make configsrv replica set"
     # Make configsrv replica set
     cmd = r"""
-    docker exec -it mongocfg1 bash -c "echo 'rs.initiate({_id: \"mongorsconf\",configsvr: true, members: [{ _id : 0, host : \"mongocfg1\" },{ _id : 1, host : \"mongocfg2\" }, { _id : 2, host : \"mongocfg3\" }]})' | mongo"
+    docker exec -it cfg1 bash -c "echo 'rs.initiate({_id: \"config-replica\",configsvr: true, members: [{ _id : 0, host : \"cfg1\" },{ _id : 1, host : \"cfg2\" }, { _id : 2, host : \"cfg3\" }]})' | mongo"
     """
     os.popen(cmd).read()[:-1].replace('\n', ' ')
     print "Please wait 20 sec..."
@@ -134,13 +134,15 @@ def install():
     print "Start shard initializing"
     # Make configsrv replica set
     sample = r""
+    priority = 100
     for i in range(num_of_shard):
         i += 1
         y = i - 1
         if i >= 8:
-            sample += r"""{ _id : %s, host : \"shard%s:27018\", priority: 0, votes: 0 },""" % (y, i)
+            sample += r"""{ _id : %s, host : \"shard%s:27018\", votes: 0 },""" % (y, i)
         else:
-            sample += r"""{ _id : %s, host : \"shard%s:27018\" },""" % (y, i)
+            priority -= 10
+            sample += r"""{ _id : %s, host : \"shard%s:27018\" priority: %s},""" % (y, i, priority)
     cmd = r"""
     docker exec -it shard1 bash -c "echo 'rs.initiate({_id : \"shard-replica\", members: [%s]})' | mongo --port 27018"
     """ % (sample)
@@ -153,7 +155,7 @@ def install():
     for i in range(num_of_shard):
         i += 1
         cmd = r"""
-        docker exec -it mongos1 bash -c "echo 'sh.addShard(\"shard-replica/shard{}:27018\")' | mongo "
+        docker exec -it router bash -c "echo 'sh.addShard(\"shard-replica/shard{}:27018\")' | mongo "
         """.format(i)
         os.popen(cmd).read()[:-1].replace('\n', ' ')
     print "Shard initializing... \t\t\t done"
@@ -162,9 +164,11 @@ def install():
     f = open('auth.js', 'w')
     f.write(auth_text)
     f.close()
-    cmd = "mongo --port 27018 < auth.js"
+    cmd = "sudo cp auth.js mongo_cluster/data1/"
     os.popen(cmd).read()
-    cmd = "mongo --port 27017 < auth.js"
+    cmd = "docker exec -it shard1 bash -c 'mongo --port 27018 < /data/db/auth.js'"
+    os.popen(cmd).read()
+    cmd = "docker exec -it shard1 bash -c 'mongo --host router < /data/db/auth.js; rm /data/db/auth.js'"
     os.popen(cmd).read()
     os.popen('sudo rm -rf darvazeh').read()
     os.popen('sudo rm -rf auth.js').read()
