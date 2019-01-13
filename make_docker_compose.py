@@ -58,6 +58,7 @@ services:
             - '27017'
         volumes:
             - /etc/localtime:/etc/localtime:ro
+            - ./mongo_cluster/router:/data/db
 
 """
 set_auth = """
@@ -112,7 +113,7 @@ def install():
     f = open('docker-compose.yml', 'w')
     f.write(compose_yml.format(shards, mongos))
     f.close()
-    print "Make docker Compose file... \t\t\t done"
+    print "Make docker Compose file... \t\t done"
 
     print "Running docker compose up"
     cmd = "docker-compose up -d"
