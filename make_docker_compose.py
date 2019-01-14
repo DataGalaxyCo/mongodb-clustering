@@ -14,15 +14,14 @@ from config import shard_keys_map
 
 
 def install():
-
     cmd = "openssl rand -base64 512 > darvazeh"
     os.popen(cmd)
     cmd = "chmod 400 darvazeh"
     os.popen(cmd)
-    print "Making `keyfile` has been finished... done"
+    print("Making `keyfile` has been finished... done")
 
     cmd = "docker build -t mongokey ."
-    print "Making custom mongodb image has been finished... done"
+    print("Making custom mongodb image has been finished... done")
     os.popen(cmd)
 
     shards = ""
@@ -54,22 +53,21 @@ def install():
     f = open('docker-compose.yml', 'w')
     f.write(compose_yml.format(shards, mongos))
     f.close()
-    print "Make docker Compose file... done"
+    print("Make docker Compose file... done")
 
     cmd = "docker-compose up -d"
     os.popen(cmd)
-    print "Please wait 20 sec..."
+    print("Please wait 20 sec...")
     time.sleep(20)
-    print "Docker-compose up... done"
-
+    print("Docker-compose up... done")
     # Make configsrv replica set
     cmd = r"""
     docker exec -it cfg1 bash -c "echo 'rs.initiate({_id: \"config-replica\",configsvr: true, members: [{ _id : 0, host : \"cfg1\" },{ _id : 1, host : \"cfg2\" }, { _id : 2, host : \"cfg3\" }]})' | mongo"
     """
     os.popen(cmd)
-    print "Please wait 20 sec..."
+    print("Please wait 20 sec...")
     time.sleep(20)
-    print "Making cfg replica set has been finished... done"
+    print("Making cfg replica set has been finished... done")
 
     sample = r""
     priority = 100
@@ -85,7 +83,7 @@ def install():
     docker exec -it shard1 bash -c "echo 'rs.initiate({_id : \"shard-replica\", members: [%s]})' | mongo --port 27018"
     """ % (sample)
     inti_shard = os.popen(cmd)
-    print "Please wait 20 sec..."
+    print("Please wait 20 sec...")
     time.sleep(20)
 
     for i in range(num_of_shard):
@@ -94,14 +92,14 @@ def install():
         docker exec -it router bash -c "echo 'sh.addShard(\"shard-replica/shard{}:27018\")' | mongo "
         """.format(i)
         os.popen(cmd)
-    print "Shard initializing has been finished... done"
+    print("Shard initializing has been finished... done")
 
     authentication()
-    print "Please wait 10 sec for authentication..."
+    print("Please wait 10 sec for authentication...")
     time.sleep(10)
     shard_key_func()
     os.popen('reset')
-    print "Final step has been finished."
+    print("Final step has been finished.")
 
 
 def authentication():
