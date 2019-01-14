@@ -131,7 +131,7 @@ def restore():
 
 
 def remove():
-    cmd = "docker stop $(docker container ls -aq); docker rm $(docker container ls -aq); sudo rm -rf mongo_cluster/"
+    cmd = "docker stop $(docker container ls -aq); docker rm $(docker container ls -aq); sudo rm -rf mongo_cluster/; exit"
     os.popen(cmd)
     os.popen('rm -rf darvazeh')
     os.popen('rm -rf auth.js')
