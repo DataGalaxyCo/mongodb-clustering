@@ -62,7 +62,7 @@ def install():
     print("Docker-compose up... done")
     # Make configsrv replica set
     cmd = r"""
-    docker exec -it cfg1 bash -c "echo 'rs.initiate({_id: \"config-replica\",configsvr: true, members: [{ _id : 0, host : \"cfg1\" },{ _id : 1, host : \"cfg2\" }, { _id : 2, host : \"cfg3\" }]})' | mongo"
+    docker exec -it cfg1 bash -c "echo 'rs.initiate({_id: \"config-replica\",configsvr: true, members: [{ _id : 0, host : \"cfg1\" },{ _id : 1, host : \"cfg2\" }, { _id : 2, host : \"cfg3\" }]})' | mongo; exit"
     """
     os.popen(cmd)
     print("Please wait 20 sec...")
@@ -80,7 +80,7 @@ def install():
             priority -= 10
             sample += r"""{ _id : %s, host : \"shard%s:27018\" ,priority: %d},""" % (y, i, priority)
     cmd = r"""
-    docker exec -it shard1 bash -c "echo 'rs.initiate({_id : \"shard-replica\", members: [%s]})' | mongo --port 27018"
+    docker exec -it shard1 bash -c "echo 'rs.initiate({_id : \"shard-replica\", members: [%s]})' | mongo --port 27018; exit"
     """ % (sample)
     inti_shard = os.popen(cmd)
     print("Please wait 20 sec...")
@@ -89,7 +89,7 @@ def install():
     for i in range(num_of_shard):
         i += 1
         cmd = r"""
-        docker exec -it router bash -c "echo 'sh.addShard(\"shard-replica/shard{}:27018\")' | mongo "
+        docker exec -it router bash -c "echo 'sh.addShard(\"shard-replica/shard{}:27018\")' | mongo; exit"
         """.format(i)
         os.popen(cmd)
     print("Shard initializing has been finished... done")
@@ -111,9 +111,9 @@ def authentication():
     os.popen(cmd)
     cmd = "sudo cp auth.js mongo_cluster/router/"
     os.popen(cmd)
-    cmd = "docker exec -it shard1 bash -c 'mongo --port 27018 < /data/db/auth.js;rm /data/db/auth.js'"
+    cmd = "docker exec -it shard1 bash -c 'mongo --port 27018 < /data/db/auth.js;rm /data/db/auth.js'; exit"
     os.popen(cmd)
-    cmd = "docker exec -it router bash -c 'mongo < /data/db/auth.js; rm /data/db/auth.js'"
+    cmd = "docker exec -it router bash -c 'mongo < /data/db/auth.js; rm /data/db/auth.js'; exit"
     os.popen(cmd)
     os.popen('rm -rf darvazeh')
     os.popen('rm -rf auth.js')
@@ -125,14 +125,16 @@ def restore():
     if 'No such file or directory' in p[1]:
         print "Error: Please put your dump directory to the bank directory"
         return
-    cmd = "docker exec -it router bash -c 'mongorestore --authenticationDatabase admin -u {} -p {} /data/db/dump;rm -rf /data/db/dump'"
+    cmd = "docker exec -it router bash -c 'mongorestore --authenticationDatabase admin -u {} -p {} /data/db/dump;rm -rf /data/db/dump'; exit"
     os.popen(cmd.format(mongo_user, mongo_pass))
     print "Restoring has been finished... done"
 
 
 def remove():
-    cmd = "docker stop $(docker container ls -aq); docker rm $(docker container ls -aq); sudo rm -rf mongo_cluster/"
+    cmd = "docker stop $(docker container ls -aq); docker rm $(docker container ls -aq); sudo rm -rf mongo_cluster/; exit"
     os.popen(cmd)
+    os.popen('rm -rf darvazeh')
+    os.popen('rm -rf auth.js')
     print "Remove... done"
 
 
@@ -148,7 +150,7 @@ def shard_key_func():
     f.close()
     cmd = "sudo cp extra.js mongo_cluster/router/"
     os.popen(cmd)
-    cmd = "docker exec -it router bash -c 'mongo --authenticationDatabase admin -u {} -p {} < /data/db/extra.js; rm /data/db/extra.js'".format(mongo_user, mongo_pass)
+    cmd = "docker exec -it router bash -c 'mongo --authenticationDatabase admin -u {} -p {} < /data/db/extra.js; rm /data/db/extra.js'; exit".format(mongo_user, mongo_pass)
     os.popen(cmd)
     os.popen('rm -rf extra.js')
     print "Finish adding shard_keys processes... done"
