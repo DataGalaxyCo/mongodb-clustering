@@ -1,6 +1,9 @@
 import os
 import sys
 import time
+from subprocess import PIPE
+from subprocess import Popen
+
 from config import set_auth
 from config import help_msg
 from config import mongo_user
@@ -81,7 +84,6 @@ def install():
     cmd = r"""
     docker exec -it shard1 bash -c "echo 'rs.initiate({_id : \"shard-replica\", members: [%s]})' | mongo --port 27018"
     """ % (sample)
-
     inti_shard = os.popen(cmd)
     print "Please wait 20 sec..."
     time.sleep(20)
@@ -98,7 +100,7 @@ def install():
     print "Please wait 10 sec for authentication..."
     time.sleep(10)
     shard_key_func()
-
+    os.popen('reset')
     print "Final step has been finished."
 
 
@@ -117,6 +119,17 @@ def authentication():
     os.popen(cmd)
     os.popen('rm -rf darvazeh')
     os.popen('rm -rf auth.js')
+
+
+def restore():
+    cmd = "sudo cp -dpr bank/dump mongo_cluster/router/"
+    p = Popen(cmd.split(' '), stdout=PIPE, stderr=PIPE).communicate()
+    if 'No such file or directory' in p[1]:
+        print "Error: Please put your dump directory to the bank directory"
+        return
+    cmd = "docker exec -it router bash -c 'mongorestore --authenticationDatabase admin -u {} -p {} /data/db/dump;rm -rf /data/db/dump'"
+    os.popen(cmd.format(mongo_user, mongo_pass))
+    print "Restoring has been finished... done"
 
 
 def remove():
@@ -166,6 +179,9 @@ if __name__ == '__main__':
         elif op == 'stop':
             cmd = "docker-compose stop"
             os.popen(cmd)
+        elif op == 'restore':
+            print "Start Restoring ..."
+            restore()
         elif (op == 'help') or (op == '--help'):
             print help_msg
         else:
