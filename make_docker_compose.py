@@ -1,3 +1,4 @@
+#/usr/bin/python
 import os
 import sys
 import time
@@ -125,7 +126,7 @@ def restore():
     if 'No such file or directory' in p[1]:
         print "Error: Please put your dump directory to the bank directory"
         return
-    cmd = "docker exec -it router bash -c 'mongorestore --authenticationDatabase admin -u {} -p {} /data/db/dump;rm -rf /data/db/dump; exit'"
+    cmd = "docker exec -it router bash -c 'mongorestore /data/db/dump/* --drop --authenticationDatabase admin -u {} -p {}; rm -rf /data/db/dump; exit'"
     os.popen(cmd.format(mongo_user, mongo_pass))
     print "Restoring has been finished... done"
 
@@ -156,6 +157,27 @@ def shard_key_func():
     print "Finish adding shard_keys processes... done"
 
 
+def change_fids_pass_services():
+    configs = [
+        "/usr/local/FIDS/FIDS/fids/settings_local.py",
+        "/usr/local/activity/activity_log/config_local.py",
+        "/usr/local/main/main-core/config/settings_local.py",
+        "/usr/local/api/core-api-general/config/settings_local.py",
+        "/usr/local/flight-list/core-flight-list/config/settings_local.py"
+    ]
+
+    for conf in configs:
+        file = open(conf, "r+")
+        text = file.readlines()
+        for index, line in text:
+            text[index] = line.replace(
+                'nQHozRvAunyWegjJK7aQN1hK2tBJE787', mongo_pass
+            )
+        os.system("echo '' > " + conf)
+        file.writelines(text)
+        file.close()
+
+
 if __name__ == '__main__':
     try:
         op = sys.argv[1]
@@ -184,6 +206,8 @@ if __name__ == '__main__':
             restore()
         elif (op == 'help') or (op == '--help'):
             print help_msg
+        elif op == 'change_pass':
+            change_fids_pass_services()
         else:
             print help_msg
     except Exception as e:
