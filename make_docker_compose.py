@@ -37,6 +37,8 @@ def install():
         command: mongod --keyFile darvazeh --shardsvr --replSet shard-replica --dbpath /data/db --port 27018
         ports:
             - {}:27018
+        expose:
+            - '27018'
         environment:
             TERM: xterm
         volumes:
