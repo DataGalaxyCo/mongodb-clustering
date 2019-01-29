@@ -18,8 +18,6 @@ services:
         command: mongod --keyFile darvazeh --configsvr --replSet config-replica --dbpath /data/db --port 27017
         environment:
             TERM: xterm
-        expose:
-            - '27017'
         volumes:
             - /etc/localtime:/etc/localtime:ro
             - ./mongo_cluster/config1:/data/db
@@ -30,8 +28,6 @@ services:
         command: mongod --keyFile darvazeh --configsvr --replSet config-replica --dbpath /data/db --port 27017
         environment:
             TERM: xterm
-        expose:
-            - '27017'
         volumes:
             - /etc/localtime:/etc/localtime:ro
             - ./mongo_cluster/config2:/data/db
@@ -42,8 +38,6 @@ services:
         command: mongod --keyFile darvazeh --configsvr --replSet config-replica --dbpath /data/db --port 27017
         environment:
             TERM: xterm
-        expose:
-            - '27017'
         volumes:
             - /etc/localtime:/etc/localtime:ro
             - ./mongo_cluster/config3:/data/db
@@ -59,8 +53,6 @@ services:
         command: mongos --keyFile darvazeh --configdb config-replica/cfg1:27017,cfg2:27017,cfg3:27017 --port 27017 --bind_ip_all
         ports:
             - 27017:27017
-        expose:
-            - '27017'
         volumes:
             - /etc/localtime:/etc/localtime:ro
             - ./mongo_cluster/router:/data/db
